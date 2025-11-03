@@ -186,15 +186,9 @@ public class ProduccionService {
             if (puestoSec < totalPuestos) {
                 vale.setPuestoActual(puestoSec + 1);
                 valeRepo.save(vale);
-                out.put("mensaje", "Puesto completo. Avanzado al siguiente.");
-                out.put("siguientePuesto", vale.getPuestoActual());
             } else {
                 vale.setEstado(EstadoVale.FINALIZADO);
                 valeRepo.save(vale);
-                var op = vale.getOrdenProduccion();
-                op.setProducidas(op.getProducidas() + 1);
-                ordenRepo.save(op);
-                out.put("mensaje", "Vale finalizado. Orden actualizada.");
             }
         }
         return out;
