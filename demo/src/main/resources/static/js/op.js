@@ -93,10 +93,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   btnInit?.addEventListener('click', async () => {
-    const vale = await API.iniciarVale(opId);
-    valecode.value = vale.codigoVale ?? '';
-    await load();
-    const chkPuesto = document.getElementById('chk-puesto');
+    try {
+      const vale = await API.iniciarVale(opId);
+      valecode.value = vale.codigoVale ?? '';
+      alert('Vale iniciado correctamente.');
+      await load();
+    } catch (err) {
+      alert('No se puede iniciar un nuevo vale hasta finalizar el actual.');
+      console.error(err);
+    }
   });
 
   btnRefresh?.addEventListener('click', load);

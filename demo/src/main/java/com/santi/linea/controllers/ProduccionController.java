@@ -2,6 +2,7 @@ package com.santi.linea.controllers;
 
 import com.santi.linea.models.ValeProduccion;
 import com.santi.linea.services.ProduccionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +16,15 @@ public class ProduccionController {
     private final ProduccionService service;
     public ProduccionController(ProduccionService s){ this.service = s; }
 
-    // Iniciar vale
-    @PostMapping("/vales/iniciar")
-    public ValeProduccion iniciarVale(@RequestParam Long opId) {
-        return service.iniciarVale(opId);
+    @PostMapping("/iniciar")
+    public ResponseEntity<?> iniciar(@RequestParam Long idOrden) {
+        try {
+            ValeProduccion vale = service.iniciarVale(idOrden);
+            return ResponseEntity.ok(vale);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 
     // controllers/ProduccionController.java (fragmento)

@@ -29,8 +29,13 @@ public class ProduccionService {
     @Transactional
     public ValeProduccion iniciarVale(Long opId) {
         var op = ordenRepo.findById(opId).orElseThrow();
-        var codigo = codeGenerator.nextVale(op.getCodigoOrden());
 
+        if (valeRepo.existsByOrdenProduccion_IdAndEstado(opId, EstadoVale.EN_PROCESO)) {
+            throw new IllegalStateException("Ya existe un vale activo para esta orden. Debe finalizarse antes de iniciar uno nuevo.");
+        }
+
+        // Generar código y crear vale nuevo
+        var codigo = codeGenerator.nextVale(op.getCodigoOrden());
         var vale = valeRepo.save(ValeProduccion.builder()
                 .ordenProduccion(op)
                 .codigoVale(codigo)
@@ -38,12 +43,10 @@ public class ProduccionService {
                 .puestoActual(1)
                 .build());
 
-        // sembrar requisitos => una fila por componente requerido en cada puesto
         var puestos = puestoRepo.findAllByOrderByOrdenSecuenciaAsc();
         for (var p : puestos) {
             var detalles = formulaPuestoRepo.findByFormulaIdAndPuestoId(op.getFormula().getId(), p.getId());
-            // agrupar por componente
-            Map<Long,Integer> sumas = new HashMap<>();
+            Map<Long, Integer> sumas = new HashMap<>();
             for (var d : detalles) {
                 sumas.merge(d.getComponente().getId(), d.getCantidad(), Integer::sum);
             }
@@ -56,6 +59,7 @@ public class ProduccionService {
                         .build());
             }
         }
+
         return vale;
     }
 
