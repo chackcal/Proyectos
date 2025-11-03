@@ -66,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function load() {
-    // OJO: obtengo chk-puesto AQUÍ (antes de usarlo)
     const chkPuesto = document.getElementById('chk-puesto');
 
     const op = await fetchOP();
@@ -79,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
     tbody.innerHTML = '';
     vales.forEach(v => tbody.appendChild(valeRow(v)));
 
-    // Elegí un vale para prellenar checklist: el EN_PROCESO o el primero
     const elegido = vales.find(v => v.estado === 'EN_PROCESO') ?? vales[0];
     if (elegido && chkPuesto) {
       const puestoNum = (typeof elegido.puestoActual === 'number' && elegido.puestoActual > 0) ? elegido.puestoActual : 1;
@@ -126,5 +124,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!chkPuesto?.value) return alert('Indicá el número de puesto');
     await loadChecklist(valecode.value, Number(chkPuesto.value));
   });
+
+  document.addEventListener('DOMContentLoaded', load);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      load();
+    }
+  });
+
+  if (refreshBtn) refreshBtn.addEventListener('click', load);
 
 });

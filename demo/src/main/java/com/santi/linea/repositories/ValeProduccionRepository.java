@@ -12,5 +12,5 @@ import java.util.Optional;
 public interface ValeProduccionRepository extends JpaRepository<ValeProduccion, Long> {
     List<ValeProduccion> findByOrdenProduccion_Id(Long ordenId);
     Optional<ValeProduccion> findByCodigoVale(String codigoVale);
-    boolean existsByOrdenProduccion_IdAndEstado(Long ordenId, EstadoVale estado);;
+    long countByOrdenProduccion_IdAndEstado(Long ordenId, EstadoVale estado);;
 }

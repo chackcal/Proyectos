@@ -17,7 +17,9 @@ public class ValeProduccion {
 
     @Column(unique = true, nullable = false)
     private String codigoVale;
+
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private EstadoVale estado;
 
     @Column(nullable = false)

@@ -1,6 +1,8 @@
 package com.santi.linea.controllers;
 
+import com.santi.linea.models.EstadoVale;
 import com.santi.linea.models.ValeProduccion;
+import com.santi.linea.repositories.ValeProduccionRepository;
 import com.santi.linea.services.ProduccionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,16 +16,16 @@ import java.util.Map;
 @CrossOrigin
 public class ProduccionController {
     private final ProduccionService service;
+    private  ValeProduccionRepository valeRepo;
     public ProduccionController(ProduccionService s){ this.service = s; }
 
     @PostMapping("/iniciar")
-    public ResponseEntity<?> iniciar(@RequestParam Long idOrden) {
+    public ResponseEntity<?> iniciar(@RequestParam("idOrden") Long idOrden) {
         try {
-            ValeProduccion vale = service.iniciarVale(idOrden);
+            var vale = service.iniciarVale(idOrden);
             return ResponseEntity.ok(vale);
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -51,6 +53,21 @@ public class ProduccionController {
     public List<Map<String,Object>> checklist(@RequestParam String codigoVale,
                                               @RequestParam int puesto) {
         return service.checklist(codigoVale, puesto);
+    }
+    @GetMapping("/debug/puede-iniciar")
+    public Map<String,Object> puedeIniciar(@RequestParam("idOrden") Long idOrden) {
+        long activos = valeRepo.countByOrdenProduccion_IdAndEstado(idOrden, EstadoVale.EN_PROCESO);
+        var vales = valeRepo.findByOrdenProduccion_Id(idOrden);
+        return Map.of(
+                "idOrden", idOrden,
+                "activosEN_PROCESO", activos,
+                "vales", vales.stream().map(v -> Map.of(
+                        "id", v.getId(),
+                        "codigo", v.getCodigoVale(),
+                        "estado", String.valueOf(v.getEstado()),
+                        "puestoActual", v.getPuestoActual()
+                )).toList()
+        );
     }
 
 }

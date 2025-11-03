@@ -1,7 +1,13 @@
 const API = {
   ordenesActivas: async () => {
-    const res = await fetch('/api/ordenes/activas');
+    const url = `/api/ordenes/activas?_=${Date.now()}`; // evita caché
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Error al cargar órdenes activas');
+    return res.json();
+  },
+  ordenesFinalizadas: async () => {
+    const res = await fetch(`/api/ordenes/finalizadas?_=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Error al cargar órdenes finalizadas');
     return res.json();
   },
   ordenById: async (id) => {
@@ -15,13 +21,12 @@ const API = {
     return res.json();
   },
   iniciarVale: async (opId) => {
-    const form = new URLSearchParams({ opId });
-    const res = await fetch('/api/produccion/vales/iniciar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form
-    });
-    if (!res.ok) throw new Error('Error al iniciar vale');
+    const res = await fetch(`/api/produccion/iniciar?idOrden=${encodeURIComponent(opId)}`, { method: 'POST' });
+    if (!res.ok) {
+      let msg = 'Error al iniciar vale';
+      try { const j = await res.json(); if (j?.error) msg = j.error; } catch {}
+      throw new Error(msg);
+    }
     return res.json();
   },
   requisitos: async ({ codigoVale, puesto }) => {

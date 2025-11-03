@@ -1,6 +1,7 @@
 import API from './api.js';
 
 const tbody = document.querySelector('#tabla-op tbody');
+const tbodyFin = document.querySelector('#tabla-op-fin tbody');
 const kpis = document.getElementById('kpis');
 const refreshBtn = document.getElementById('refresh');
 
@@ -42,6 +43,19 @@ function row(op) {
   return tr;
 }
 
+function rowFin(op) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${op.codigoOrden}</td>
+    <td>${op.productoFinal?.nombre ?? '-'}</td>
+    <td>${op.cantidad}</td>
+    <td>${op.producidas}</td>
+    <td><span class="badge">${op.estado}</span></td>
+    <td>${op.fechaFin ?? '-'}</td>
+  `;
+  return tr;
+}
+
 async function tieneValeActivo(opId) {
   try {
     const vales = await API.valesPorOP(opId);
@@ -54,28 +68,36 @@ async function tieneValeActivo(opId) {
 
 async function load() {
   try {
-    const ops = await API.ordenesActivas();
+    // Cargar activas y finalizadas en paralelo
+    const [ops, fin] = await Promise.all([
+      API.ordenesActivas(),
+      API.ordenesFinalizadas()
+    ]);
+    console.log('[INDEX] /api/ordenes/activas =>', ops);
+    console.log('[INDEX] /api/ordenes/finalizadas =>', fin);
+
+    // KPIs con activas
     renderKpis(ops);
+
+    // Render activas
     tbody.innerHTML = '';
     ops.forEach(op => tbody.appendChild(row(op)));
 
-    // Después de renderizar, evaluar cada fila y ajustar su botón
+    // Botón “Iniciar vale”
     for (const op of ops) {
       (async () => {
         const hasActive = await tieneValeActivo(op.id);
         const btn = tbody.querySelector(`.btn-iniciar[data-op="${op.id}"]`);
         if (!btn) return;
-        if (hasActive) {
-          btn.disabled = true;
-          btn.title = 'Ya hay un vale en proceso para esta OP';
-          // Si preferís ocultar en lugar de deshabilitar, usa:
-          // btn.style.display = 'none';
-        } else {
-          btn.disabled = false;
-          btn.title = 'Iniciar un nuevo vale';
-          // btn.style.display = '';
-        }
+        btn.disabled = hasActive;
+        btn.title = hasActive ? 'Ya hay un vale en proceso para esta OP' : 'Iniciar un nuevo vale';
       })();
+    }
+
+    // Render finalizadas
+    if (tbodyFin) {
+      tbodyFin.innerHTML = '';
+      (fin ?? []).forEach(op => tbodyFin.appendChild(rowFin(op)));
     }
   } catch (e) {
     console.error(e);
@@ -83,7 +105,7 @@ async function load() {
   }
 }
 
-// Delegación de eventos: manejar clicks en “Iniciar vale”
+// Iniciar vale
 tbody.addEventListener('click', async (ev) => {
   const btn = ev.target.closest('.btn-iniciar');
   if (!btn) return;
@@ -106,8 +128,12 @@ tbody.addEventListener('click', async (ev) => {
     console.error(e);
   }
 });
+document.addEventListener('DOMContentLoaded', load);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    load();
+  }
+});
 
 if (refreshBtn) refreshBtn.addEventListener('click', load);
-
-// Modo manual: no llamamos load() automáticamente.
-// El usuario actualiza con el botón “Actualizar”.

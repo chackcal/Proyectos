@@ -16,7 +16,6 @@
     <div class="card">
         <div class="row" style="justify-content: space-between;">
             <h2 style="margin:0">Órdenes activas</h2>
-            <button id="refresh" class="btn">Actualizar</button>
         </div>
 
         <div id="kpis" class="kpis"></div>
@@ -30,6 +29,23 @@
                 <th>Producidas</th>
                 <th>Avance</th>
                 <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="row" style="justify-content: space-between;">
+            <h2 class="section-title">Órdenes finalizadas</h2>
+        </div>
+
+        <table class="table" id="tabla-op-fin">
+            <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Producidas</th>
+                <th>Estado</th>
+                <th>Fecha fin</th>
             </tr>
             </thead>
             <tbody></tbody>

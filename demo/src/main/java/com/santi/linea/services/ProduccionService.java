@@ -30,7 +30,9 @@ public class ProduccionService {
     public ValeProduccion iniciarVale(Long opId) {
         var op = ordenRepo.findById(opId).orElseThrow();
 
-        if (valeRepo.existsByOrdenProduccion_IdAndEstado(opId, EstadoVale.EN_PROCESO)) {
+        //verificar si hay un vale activo (en proceso)
+        long activos = valeRepo.countByOrdenProduccion_IdAndEstado(opId, EstadoVale.EN_PROCESO);
+        if (activos > 0) {
             throw new IllegalStateException("Ya existe un vale activo para esta orden. Debe finalizarse antes de iniciar uno nuevo.");
         }
 
@@ -160,7 +162,6 @@ public class ProduccionService {
         if (updated == 0)
             return Map.of("ok", false, "error", "Cantidad de este componente ya completa para el puesto");
 
-        // Traza opcional
         escaneoRepo.save(EscaneoComponente.builder()
                 .vale(vale).puesto(puesto).componente(comp)
                 .codigoEscaneado(codigoComp)
@@ -191,8 +192,23 @@ public class ProduccionService {
                 vale.setPuestoActual(puestoSec + 1);
                 valeRepo.save(vale);
             } else {
+                //finalizacion de vale
                 vale.setEstado(EstadoVale.FINALIZADO);
+                vale.setFinalizadoEn(java.time.LocalDateTime.now());
                 valeRepo.save(vale);
+
+                //Incremento de orden y cierre
+                var op = vale.getOrdenProduccion();
+                op.setProducidas(op.getProducidas() + 1);
+                ordenRepo.saveAndFlush(op);
+
+                ordenService.cerrarSiCompleta(op.getId());
+
+                escaneoRepo.flush();
+
+                //mensaje
+                out.put("mensaje", "Producción finalizada. OP " + op.getCodigoOrden() +
+                        " " + op.getProducidas() + "/" + op.getCantidad());
             }
         }
         return out;
