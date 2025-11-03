@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Detalle de OP · Línea de Producción</title>
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="brand">Detalle de OP</div>
+        <a href="/index.html" class="btn">Volver</a>
+    </div>
+
+    <div class="card">
+        <div class="row" style="justify-content: space-between;">
+            <h2 id="op-title" style="margin:0">OP</h2>
+            <div class="row">
+                <button id="btn-iniciar" class="btn btn-accent">Iniciar Vale</button>
+                <button id="btn-refresh" class="btn">Actualizar</button>
+            </div>
+        </div>
+        <div id="op-meta" class="small" style="margin-top:6px"></div>
+
+        <table class="table" id="tabla-vales">
+            <thead>
+            <tr>
+                <th>Código Vale</th>
+                <th>Estado</th>
+                <th>Puesto actual</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3 style="margin-top:0">Simulador de escaneo</h3>
+        <div class="row" style="gap:12px; flex-wrap: wrap;">
+            <input type="text" id="valecode" placeholder="Código de Vale" />
+            <input type="number" id="puesto" min="1" placeholder="Puesto (1..N)" />
+            <input type="text" id="compcode" placeholder="Código de componente" />
+            <button id="btn-scan" class="btn">Escanear</button>
+            <button id="btn-undo" class="btn">Deshacer último</button>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <div class="row" style="justify-content: space-between;">
+            <h3 style="margin:0">Checklist del puesto</h3>
+            <div class="row">
+                <input type="number" id="chk-puesto" min="1" placeholder="Puesto (1..N)" style="width:140px" />
+                <button id="btn-chk-refresh" class="btn">Actualizar checklist</button>
+            </div>
+        </div>
+
+        <table class="table" id="tabla-checklist">
+            <thead>
+            <tr>
+                <th>Código</th>
+                <th>Componente</th>
+                <th>Progreso</th>
+                <th>Estado</th>
+            </tr>
+            </thead>
+            <tbody id="checklist-body"></tbody>
+        </table>
+        <div class="small">Se muestran los componentes requeridos para el puesto seleccionado.</div>
+    </div>
+</div>
+
+<script type="module" src="/js/op.js"></script>
+</body>
+</html>
