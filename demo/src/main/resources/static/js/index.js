@@ -62,28 +62,25 @@ async function tieneValeActivo(opId) {
     return Array.isArray(vales) && vales.some(v => v.estado === 'EN_PROCESO');
   } catch (e) {
     console.error('Error consultando vales por OP', opId, e);
-    return false; // si falla, no bloqueamos el botón
+    return false;
   }
 }
 
 async function load() {
   try {
-    // Cargar activas y finalizadas en paralelo
     const [ops, fin] = await Promise.all([
       API.ordenesActivas(),
       API.ordenesFinalizadas()
     ]);
+
     console.log('[INDEX] /api/ordenes/activas =>', ops);
     console.log('[INDEX] /api/ordenes/finalizadas =>', fin);
 
-    // KPIs con activas
     renderKpis(ops);
 
-    // Render activas
     tbody.innerHTML = '';
     ops.forEach(op => tbody.appendChild(row(op)));
 
-    // Botón “Iniciar vale”
     for (const op of ops) {
       (async () => {
         const hasActive = await tieneValeActivo(op.id);
@@ -94,7 +91,6 @@ async function load() {
       })();
     }
 
-    // Render finalizadas
     if (tbodyFin) {
       tbodyFin.innerHTML = '';
       (fin ?? []).forEach(op => tbodyFin.appendChild(rowFin(op)));
@@ -113,7 +109,6 @@ tbody.addEventListener('click', async (ev) => {
   const opId = Number(btn.dataset.op);
   if (!opId) return;
 
-  // Doble chequeo al momento del clic
   if (await tieneValeActivo(opId)) {
     alert('Ya existe un vale en proceso para esta OP. Finalizalo antes de iniciar otro.');
     return;
@@ -122,18 +117,81 @@ tbody.addEventListener('click', async (ev) => {
   try {
     const vale = await API.iniciarVale(opId);
     alert(`Vale ${vale?.codigoVale ?? ''} iniciado correctamente.`);
-    await load(); // refresca la tabla y re-aplica las reglas
+    await load();
   } catch (e) {
     alert('No se puede iniciar un nuevo vale hasta finalizar el actual.');
     console.error(e);
   }
 });
-document.addEventListener('DOMContentLoaded', load);
 
+document.addEventListener('DOMContentLoaded', load);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    load();
-  }
+  if (document.visibilityState === 'visible') load();
+});
+if (refreshBtn) refreshBtn.addEventListener('click', load);
+
+const modal = document.getElementById('modal-op');
+const btnNueva = document.getElementById('btn-nueva-op');
+const btnCerrar = document.getElementById('btn-cerrar-modal');
+const form = document.getElementById('form-op');
+const selProducto = document.getElementById('sel-producto');
+const selFormula  = document.getElementById('sel-formula');
+
+function option(v, t){ const o=document.createElement('option'); o.value=v; o.textContent=t; return o; }
+
+async function loadProductos() {
+  selProducto.innerHTML = '';
+  const productos = await API.productos();
+  selProducto.appendChild(option('', 'Seleccioná producto'));
+  productos.forEach(p => selProducto.appendChild(option(p.id, p.nombre)));
+  selFormula.innerHTML = ''; // limpiar fórmulas
+  selFormula.appendChild(option('', 'Seleccioná fórmula'));
+}
+
+async function loadFormulas(productoId) {
+  selFormula.innerHTML = '';
+  selFormula.appendChild(option('', 'Seleccioná fórmula'));
+  if (!productoId) return;
+  const formulas = await API.formulasPorProducto(productoId);
+  formulas.forEach(f => selFormula.appendChild(option(f.id, f.nombre)));
+}
+
+function openModal(){ modal?.classList.remove('hidden'); }
+function closeModal(){ modal?.classList.add('hidden'); form?.reset(); selFormula.innerHTML=''; }
+
+btnNueva?.addEventListener('click', async () => {
+  await loadProductos();
+  openModal();
 });
 
-if (refreshBtn) refreshBtn.addEventListener('click', load);
+btnCerrar?.addEventListener('click', closeModal);
+
+selProducto?.addEventListener('change', async (e) => {
+  const id = Number(e.target.value || 0);
+  await loadFormulas(id);
+});
+
+form?.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const fd = new FormData(form);
+  const payload = {
+    // codigoOrden: null -> lo genera el backend
+    productoFinalId: Number(fd.get('productoFinalId')),
+    formulaId: Number(fd.get('formulaId')),
+    cantidad: Number(fd.get('cantidad')),
+    fechaInicio: (fd.get('fechaInicio') || '').trim() || null,
+  };
+  if (!payload.productoFinalId || !payload.formulaId || !payload.cantidad) {
+    alert('Completá producto, fórmula y cantidad');
+    return;
+  }
+  try {
+    const op = await API.crearOrden(payload);
+    alert(`Orden creada: ${op.codigoOrden}`);
+    closeModal();
+    await load(); // refresca activas/finalizadas
+  } catch (e) {
+    alert(e.message || 'Error creando la orden');
+    console.error(e);
+  }
+});

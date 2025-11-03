@@ -10,7 +10,10 @@
 <div class="container">
     <div class="header">
         <div class="brand">📦 Línea de Producción</div>
-        <a href="/op.html" class="btn">Ver detalle de OP</a>
+        <div class="row" style="gap:10px;">
+            <a href="/op.html" class="btn">Ver detalle de OP</a>
+            <button id="btn-nueva-op" class="btn">Nueva OP</button>
+        </div>
     </div>
 
     <div class="card">
@@ -33,6 +36,7 @@
             </thead>
             <tbody></tbody>
         </table>
+
         <div class="row" style="justify-content: space-between;">
             <h2 class="section-title">Órdenes finalizadas</h2>
         </div>
@@ -50,6 +54,31 @@
             </thead>
             <tbody></tbody>
         </table>
+    </div>
+</div>
+
+<div id="modal-op" class="modal hidden">
+    <div class="modal-content">
+        <h3>Nueva Orden de Producción</h3>
+        <form id="form-op" class="form">
+            <label>Producto
+                <select name="productoFinalId" id="sel-producto" required></select>
+            </label>
+            <label>Fórmula
+                <select name="formulaId" id="sel-formula" required></select>
+            </label>
+            <label>Cantidad
+                <input type="number" name="cantidad" min="1" required>
+            </label>
+            <label>Fecha inicio (opcional)
+                <input type="date" name="fechaInicio">
+            </label>
+
+            <div class="row" style="gap:8px;margin-top:12px">
+                <button type="submit" class="btn">Crear</button>
+                <button type="button" id="btn-cerrar-modal" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </form>
     </div>
 </div>
 

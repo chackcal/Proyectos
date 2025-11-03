@@ -45,6 +45,29 @@ const API = {
     if (!res.ok) throw new Error('Error al escanear');
     return res.text();
   },
+  crearOrden: async ({ codigoOrden, productoFinalId, formulaId, cantidad, fechaInicio }) => {
+    const res = await fetch('/api/ordenes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigoOrden, productoFinalId, formulaId, cantidad, fechaInicio })
+    });
+    if (!res.ok) {
+      let msg = 'Error al crear la orden';
+      try { const j = await res.json(); if (j?.error) msg = j.error; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
+  },
+  productos: async () => {
+    const res = await fetch('/api/catalogo/productos?_=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('Error al cargar productos');
+    return res.json();
+  },
+  formulasPorProducto: async (productoId) => {
+    const res = await fetch(`/api/catalogo/formulas?productoId=${encodeURIComponent(productoId)}&_=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Error al cargar fórmulas');
+    return res.json();
+  },
   deshacer: async ({ codigoVale, puesto }) => {
     const form = new URLSearchParams({ codigoVale, puesto });
     const res = await fetch('/api/produccion/scan/undo', {

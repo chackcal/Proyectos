@@ -28,29 +28,26 @@ public class OrdenService {
 
     @Transactional
     public OrdenProduccion crearOrden(CrearOrdenRequest req) {
-        if (req.getProductoFinalId() == null || req.getFormulaId() == null || req.getCantidad() == null || req.getCantidad() <= 0) {
-            throw new IllegalArgumentException("Datos inválidos: producto, formula y cantidad > 0 son obligatorios.");
+        if (req.getProductoFinalId() == null || req.getFormulaId() == null ||
+                req.getCantidad() == null || req.getCantidad() <= 0) {
+            throw new IllegalArgumentException("Producto, fórmula y cantidad (>0) son obligatorios.");
         }
 
         var producto = productoRepo.findById(req.getProductoFinalId())
                 .orElseThrow(() -> new IllegalArgumentException("Producto final no existe"));
-
         var formula = formulaRepo.findById(req.getFormulaId())
                 .orElseThrow(() -> new IllegalArgumentException("Fórmula no existe"));
 
-        // (Opcional) Validar que la fórmula corresponde al producto final
-        if (formula.getProductoFinal() != null && !formula.getProductoFinal().getId().equals(producto.getId())) {
-            throw new IllegalArgumentException("La fórmula seleccionada no corresponde al producto final.");
+        // (Opcional) validar correspondencia fórmula-producto
+        if (formula.getProductoFinal() != null &&
+                !formula.getProductoFinal().getId().equals(producto.getId())) {
+            throw new IllegalArgumentException("La fórmula no corresponde al producto final.");
         }
 
-        // Código único
-        String codigo = (req.getCodigoOrden() == null || req.getCodigoOrden().isBlank())
-                ? generarCodigoOrden(producto) // helper tuyo o uno simple abajo
-                : req.getCodigoOrden().trim();
+        String codigo = codeGenerator.nextOP(producto.getCodigo());
 
-        // Verificar unicidad
         if (ordenRepo.existsByCodigoOrden(codigo)) {
-            throw new IllegalArgumentException("El código de orden ya existe: " + codigo);
+            throw new IllegalArgumentException("Código duplicado, intentá nuevamente.");
         }
 
         var op = OrdenProduccion.builder()
@@ -60,7 +57,7 @@ public class OrdenService {
                 .cantidad(req.getCantidad())
                 .producidas(0)
                 .estado(EstadoOrden.EN_PROCESO)
-                .fechaInicio(req.getFechaInicio() != null && !req.getFechaInicio().isBlank()
+                .fechaInicio((req.getFechaInicio()!=null && !req.getFechaInicio().isBlank())
                         ? java.time.LocalDate.parse(req.getFechaInicio())
                         : java.time.LocalDate.now())
                 .build();
@@ -68,12 +65,11 @@ public class OrdenService {
         return ordenRepo.saveAndFlush(op);
     }
 
-    private String generarCodigoOrden(Producto producto) {
-        // Ej: OP-NB001-20251103-0001 (puedes usar tu CodeGenerator si quieres)
-        String pref = "OP-" + (producto.getCodigo() != null ? producto.getCodigo() : "GEN");
-        String date = java.time.LocalDate.now().toString().replaceAll("-", "");
-        long countHoy = ordenRepo.count(); // simple; puedes contar por día si prefieres
-        return String.format("%s-%s-%04d", pref, date, (countHoy % 10000));
+    private String generarCodigoOrden(String codProd) {
+        String pref = "OP-" + (codProd != null ? codProd : "GEN") + "-" +
+                java.time.LocalDate.now().toString().replaceAll("-", "") + "-";
+        long sec = ordenRepo.count() % 10000L; // simple secuencia (puedes refinarlo)
+        return String.format("%s%04d", pref, sec);
     }
 
     public List<OrdenProduccion> activas(){

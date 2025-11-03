@@ -11,7 +11,7 @@ public class CodeGenerator {
     private final AtomicInteger opCounter = new AtomicInteger(1);
     private final AtomicInteger valeCounter = new AtomicInteger(1);
 
-    public String nextOP() {
+    public String nextOP(String opCode) {
         String yyyymm = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
         return "OP-" + yyyymm + "-" + String.format("%04d", opCounter.getAndIncrement());
     }
