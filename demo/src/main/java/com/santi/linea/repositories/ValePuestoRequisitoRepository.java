@@ -25,8 +25,12 @@ public interface ValePuestoRequisitoRepository extends JpaRepository<ValePuestoR
             "where r.id = :id and r.escaneado > 0")
     int tryDecrement(@Param("id") Long id);
 
-    @Query("select (count(r) = sum(case when r.escaneado >= r.requerido then 1 else 0 end)) " +
-            "from ValePuestoRequisito r where r.vale.id = :valeId and r.puesto.id = :puestoId")
+    @Query("""
+            select case when count(r) = 0 then false 
+            else sum(case when r.escaneado >= r.requerido then 1 else 0 end) = count(r) end
+            from ValePuestoRequisito r
+            where r.vale.id = :valeId and r.puesto.id = :puestoId
+            """)
     boolean isPuestoCompleto(@Param("valeId") Long valeId, @Param("puestoId") Long puestoId);
 
     @Query("""

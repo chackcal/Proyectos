@@ -50,5 +50,3 @@ async function load() {
 }
 
 if (refreshBtn) refreshBtn.addEventListener('click', load);
-load();
-setInterval(load, 5000);
